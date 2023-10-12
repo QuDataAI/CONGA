@@ -23,7 +23,7 @@ class CONGAKnapsack01Solver(BaseKnapsack01Solver):
             n_generations (int): number of generations
             n_agents (int): number of agents in population
             epochs (int): epochs per population
-            lr (float): learning rate            
+            lr (float): learning rate
             rand (bool): use stochastic in activation function
             nu (int): fraction of boundary part
             mu1 (float): minimum value of mu for initial distribution
@@ -55,9 +55,9 @@ class CONGAKnapsack01Solver(BaseKnapsack01Solver):
         self.verbose = verbose
         self.dtype = torch.float64
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        
+
     def solve(self, values, weights, capacity):
-        """ Solve knapsack01 task 
+        """ Solve knapsack01 task
         Args:
             values (list): volues of each item
             weights (list): weights of each item
@@ -65,7 +65,7 @@ class CONGAKnapsack01Solver(BaseKnapsack01Solver):
         """
         # meseaure performance
         tm_start = time.time()
-        v_bst = -1; w_bst = -1; x_bst = None; e_bst = -1; t_bst = -1; hist = {}        
+        v_bst = -1; w_bst = -1; x_bst = None; e_bst = -1; t_bst = -1; hist = {}
 
         # convert to tensors
         v_data = torch.tensor(values,   dtype=self.dtype, device=self.device)
@@ -87,7 +87,7 @@ class CONGAKnapsack01Solver(BaseKnapsack01Solver):
         return v_bst, w_bst, x_bst, e_bst, t_bst,  time.time()-tm_start,  hist
 
     def _run_generation(self, pop, v_data, w_data, w_lim, tm_start, gen_id, v_bst, w_bst, x_bst, e_bst, t_bst):
-        """ Run cicle of generation for specific population """  
+        """ Run cicle of generation for specific population """
         av_gv, av_gw, av_w = None, None, None
         ones  = torch.ones((self.n_agents,), device=self.device)
         drop_batch = nn.Dropout(p=1.0-self.minibatch)
@@ -107,13 +107,13 @@ class CONGAKnapsack01Solver(BaseKnapsack01Solver):
             msk_batch = drop_batch(torch.ones_like(gv))
             gv = gv * msk_batch
             gw = gw * msk_batch
-            # EMA                   
+            # EMA
             av_gv, av_gw, av_w = None, None, None
             av_gv = gv if av_gv is None else beta_v * av_gv + (1-beta_v) * gv
             av_gw = gw if av_gw is None else beta_w * av_gw + (1-beta_w) * gw
             av_w  = w #if av_w  is None else beta_w * av_w  + (1-beta_w) * w
             # calc gamma
-            gvw = (av_gv * av_gw).sum(-1)  
+            gvw = (av_gv * av_gw).sum(-1)
             gww = (av_gw * av_gw).sum(-1)
             gamma = F.relu((gvw + mu * av_w/self.lr)/(gww * av_w**(self.nu-1) + self.eps))
             # update t
@@ -137,18 +137,18 @@ class CONGAKnapsack01Solver(BaseKnapsack01Solver):
         return v_bst, w_bst, x_bst, e_bst, t_bst
 
     def _value(self, x, v):
-        """ optimization function, must be maximum"""         
+        """ optimization function, must be maximum"""
         return x @ v
 
     def _bound(self, x, w, w_lim):
-        """ boundary function, must be leq 0 """  
+        """ boundary function, must be leq 0 """
         return x @ w - w_lim
 
     def _hot_sigmoid(sel, t, tau=1., std=None, rand=True, eps=1e-8):
-        """ activation function for decision put item into knapsack or not """  
+        """ activation function for decision put item into knapsack or not """
         if rand:
             # add stochastic to decision
-            if std is None:                
+            if std is None:
                 r = torch.rand_like(t)                   # ~ U(0,1)
                 r = torch.log(eps + r / (1-r+eps))       # ~ L(0,1)
             else:
@@ -164,7 +164,7 @@ class CONGAKnapsack01Solver(BaseKnapsack01Solver):
         """ Cosine scheduller """
         if v1 is None:
             return None
-            
+
         if step > steps_warmap:
             if step > steps_max:
                 # constant
@@ -177,27 +177,27 @@ class CONGAKnapsack01Solver(BaseKnapsack01Solver):
             # hot linear process
             if steps_warmap > 0:
                 return v1 + (v_hot - v1) * step / steps_warmap
-                                      
+
     def _init_population(self, items, mu1, mu2):
-        """ Initialize population """  
+        """ Initialize population """
         # new population
         pop = CONGAKnapsack01Population()
         # random initialization of knapsack state
         pop.t = nn.Parameter(-torch.randn((self.n_agents,items), dtype=self.dtype, device=self.device).abs() / items**0.5 )
-        # uniform initialization of mu 
+        # uniform initialization of mu
         pop.mu = torch.distributions.uniform.Uniform(mu1,mu2).sample([self.n_agents]).to(self.device)
         # best values
         pop.v_bst = torch.zeros((self.n_agents), dtype=self.dtype, device=self.device)
         return pop
 
     def _selection(self, items, prev_pop):
-        """ Selection process """  
+        """ Selection process """
         if prev_pop is None:
             # first population
             return self._init_population(items, self.mu1, self.mu2)
         # sort population by best value
-        sorted_indexes = sorted(range(self.n_agents), key=lambda k: prev_pop.v_best[k], reverse=True)
-        # select best portion of the existing population 
+        sorted_indexes = sorted(range(self.n_agents), key=lambda k: prev_pop.v_bst[k], reverse=True)
+        # select best portion of the existing population
         select_portion = 0.2
         # selection
         best_indexes = sorted_indexes[:int(self.n_agents*select_portion)]
@@ -207,8 +207,9 @@ class CONGAKnapsack01Solver(BaseKnapsack01Solver):
         max_mu = pop_mu.max()
         extra_frac = 2.0
         min_mu_next = min_mu / extra_frac
-        max_mu_next = max_mu * extra_frac 
-        print('selection:', min_mu, max_mu)
+        max_mu_next = max_mu * extra_frac
+        #print('selection:', min_mu, max_mu)
         # create new population
-        next_pop = self._init_population(items, min_mu_next, max_mu_next)     
+        next_pop = self._init_population(items, min_mu_next, max_mu_next)
+        return next_pop
                                     

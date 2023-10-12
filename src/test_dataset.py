@@ -17,8 +17,8 @@ def test_dataset(args):
     print(" idx pred:  value (dv)                   weigth (dw)         [epoch] | true: value      weight            n   t_bst t_tot  |  file")
     for i, idx in enumerate(range(len(ds))):
         values, weights, capacity, value, name = ds[idx]
-        solver = CONGAKnapsack01Solver(n_generations=1, n_agents=100, epochs=2000, lr=1e-1, rand=True,
-                                           nu=1.0, mu1=1.0, mu2=7.0, beta_v=0.5, beta_w=0.5, minibatch=1.0, eps=1e-6,
+        solver = CONGAKnapsack01Solver(n_generations=3, n_agents=50, epochs=2000, lr=1e-1, rand=True,
+                                           nu=1.0, mu1=0.0, mu2=7.0, beta_v=0.5, beta_w=0.5, minibatch=1.0, eps=1e-6,
                                            tau1=30, tau_hot=30, tau2=0.01, tau_warmap_epochs=1, tau_max_epochs=2000,
                                            std1=None, std_hot=None, std_warmap_epochs=None, std2=None,
                                            std_max_epochs=None,
