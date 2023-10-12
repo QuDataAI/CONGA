@@ -14,7 +14,7 @@ def test_dataset(args):
     ds = InstDataset(args.path)
     tot_err, tot_ep, max_ep = 0, 0, 0
     print("solver :", args.solver)
-    print(" idx pred:  value (dv)                   weigth (dw)         [epoch] | true: value      weight            n     t_bst  t_tot  |  file")
+    print(" idx pred:  value (dv)                   weigth (dw)         [epoch] | true: value      weight            n   t_bst t_tot  |  file")
     for i, idx in enumerate(range(len(ds))):
         values, weights, capacity, value, name = ds[idx]
         solver = CONGAKnapsack01Solver(n_generations=1, n_agents=100, epochs=2000, lr=1e-1, rand=True,
